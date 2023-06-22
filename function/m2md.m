@@ -27,11 +27,11 @@ function [mdFile, texFile] = m2md(file, varargin)
 % the .tex or .md files, the name of the .md file, or whether to delete the .tex
 % file.
 %
-% `mdFile = m2md(file)` converts the specified MATLAB file and returns the
+% `mdFile = m2md(file, ___)` converts the specified MATLAB file and returns the
 % relative path of the resulting .md file. You can use this syntax with any of 
 % the input argument combinations in the previous syntaxes.
 %
-% `[mdFile, texFile] = m2md(file)` converts the specified MATLAB file and
+% `[mdFile, texFile] = m2md(file, ___)` converts the specified MATLAB file and
 % returns the relative path of the resulting .md file and the full path of the
 % .tex file. You can use this syntax with any of the input argument combinations
 % in the previous syntaxes.

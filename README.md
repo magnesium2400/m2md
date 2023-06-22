@@ -33,10 +33,10 @@ mdFile = m2md(file,___)
 `m2md(file, Name, Value)` converts the specified MATLAB file with options specified by one or more `name,value` pair arguments. For example, you can specify custom options for generating the .tex and .md files, where to output the .tex or .md files, the name of the .md file, or whether to delete the .tex file.
    
 
-`mdFile = m2md(file)` converts the specified MATLAB file and returns the relative path of the resulting .md file. You can use this syntax with any of the input argument combinations in the previous syntaxes.
+`mdFile = m2md(file, _)` converts the specified MATLAB file and returns the relative path of the resulting .md file. You can use this syntax with any of the input argument combinations in the previous syntaxes.
    
 
-`[mdFile, texFile] = m2md(file)` converts the specified MATLAB file and returns the relative path of the resulting .md file and the full path of the .tex file. You can use this syntax with any of the input argument combinations in the previous syntaxes.
+`[mdFile, texFile] = m2md(file, _)` converts the specified MATLAB file and returns the relative path of the resulting .md file and the full path of the .tex file. You can use this syntax with any of the input argument combinations in the previous syntaxes.
    
 # Examples
 
