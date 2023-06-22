@@ -14,7 +14,7 @@
 - Authors
    
 
-Note: this README was generated using `m2md` and uses syntax dependent on MATLAB®'s PUBLISH function. However, it **requires the addition of the keyphrase `%% ENDPUBLISH` after the help/docstring to function**. See the help for the PUBLISH function and the assoiaciated Topic pages for more information on styling. For example, start lines with 1 space to show regular text; 2 spaces for monospaced text; and 3 spaces for actual code. As much as possible, compatibility with both PUBLISH and HELP was maintained. This code is distributed as-is, but is accepting improvements (at least in 2023).
+Note: this README was generated using `m2md` and uses syntax dependent on MATLAB®'s PUBLISH function. However, it **requires the addition of the keyphrase `%% ENDPUBLISH` after the help/docstring to function**. See the help for the PUBLISH function and the associated Topic pages for more information on styling. For example, start lines with 1 space to show regular text; 2 spaces for monospaced text; and 3 spaces for actual code. As much as possible, compatibility with both PUBLISH and HELP was maintained. This code is distributed as-is, but is accepting improvements (at least in 2023).
    
 # Syntax
 
@@ -30,7 +30,7 @@ mdFile = m2md(file,___)
 `m2md(file)` converts the doctring or help of the specified MATLAB code file to a tex file and then into a Markdown file, using the functionality provided by PUBLISH and LATEX2MARKDOWN. It requires the addition of the keyphrase `%% ENDPUBLISH` after the help/docstring to function.
    
 
-`m2md(file)` converts the specified MATLAB file with options specified by one or more `name,value` pair arguments. For example, you can specify custom options for generating the .tex and .md files, where to output the .tex or .md files, the name of the .md file, or whether to delete the .tex file.
+`m2md(file, Name, Value)` converts the specified MATLAB file with options specified by one or more `name,value` pair arguments. For example, you can specify custom options for generating the .tex and .md files, where to output the .tex or .md files, the name of the .md file, or whether to delete the .tex file.
    
 
 `mdFile = m2md(file)` converts the specified MATLAB file and returns the relative path of the resulting .md file. You can use this syntax with any of the input argument combinations in the previous syntaxes.
