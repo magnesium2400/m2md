@@ -45,6 +45,7 @@ while tmp > 0
 end
 fclose(fid);
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % If there is no \section* header (i.e. no H1) : probably because the docstring
 % occurred after the function declaration (i.e. not registered as an H1 by
 % publish). However, there should still be a function heading underneath the
@@ -58,6 +59,7 @@ if ~contains(str, "\section")
     str = replace(str, "\begin{document}", append("\begin{document}",newline,h));
     eraseFirst = true;
 end
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
 % Extract body from latex
 str = extractBetween(str,"\begin{document}","\end{document}");
@@ -135,8 +137,9 @@ str = regexprep(str, "\\subsection\*{([^{}]+)}","# $1");
 
 
 % Format ToC
-str = eraseBetween(str, "# Contents", "\item ");
+% str = eraseBetween(str, "# Contents", "\item ");
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % If docstring, move the second title to the start (already done above) and now
 % remove the first item from the ToC (which will be the erroneous 'Contents'
 % entry
@@ -146,12 +149,18 @@ if eraseFirst
     contentsPosition = contentsPosition(1);
     idx = idx(idx > contentsPosition);
     idx = idx(2);
-    str = eraseBetween(str, contentsPosition+9, idx, 'Boundaries', 'exclusive');
+    str = eraseBetween(str, contentsPosition+9, idx-4, 'Boundaries', 'exclusive');
 end
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
-% Format ToC
-str = eraseBetween(str, "\item ENDPUBLISH", "\end{itemize}", 'Boundaries', 'inclusive');
-str = regexprep(str, "\s{0,}\\item", "\n-");
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% Remove everything after ENDPUBLISH in ToC
+k1 = strfind(str, "\item ENDPUBLISH");
+k2 = strfind(str, "\end{itemize}"); k2 = k2(k2>k1); k2 = k2(1);
+str = eraseBetween(str, k1, k2-1, 'Boundaries', 'inclusive');
+% str = eraseBetween(str, "\item ENDPUBLISH", "\end{itemize}", 'Boundaries', 'inclusive');
+% str = regexprep(str, "\s{0,}\\item ", "\n- ");
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
 
 % % % % % toc_md = ["# Table of contents", toc_md]; % add tile
@@ -204,7 +213,7 @@ str = mergeSameEnvironments_mFile(str,"matlabsymbolicoutput");
 
 % 2: Process that other parts
 str2md = str(~idxLiteral);
-str2md = processDocumentOutput(str2md,options.tableMaxWidth);
+str2md = processDocumentOutput_mFile(str2md,options.tableMaxWidth);
 
 % Equations (数式部分)
 str2md = processEquations(str2md, options.format);

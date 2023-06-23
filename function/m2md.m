@@ -9,10 +9,11 @@ function [mdFile, texFile] = m2md(file, varargin)
 % compatibility with both PUBLISH and HELP was maintained. This code is
 % distributed as-is, but is accepting improvements (at least in 2023).
 %% Syntax
-%   m2md(file)
-%   m2md(file, Name, Value)
-%   mdFile = m2md(file,___)
-%   [mdFile,texFile] = m2md(file,___)
+%   m2md(file);
+%   m2md("m2md-this-directory");
+%   m2md(file, Name, Value);
+%   mdFile = m2md(file,___);
+%   [mdFile,texFile] = m2md(file,___);
 %
 %
 %% Description
@@ -20,6 +21,11 @@ function [mdFile, texFile] = m2md(file, varargin)
 % to a tex file and then into a Markdown file, using the functionality provided
 % by PUBLISH and LATEX2MARKDOWN. It requires the addition of the keyphrase `%%
 % ENDPUBLISH` after the help/docstring to function.
+%
+% `m2md("m2md-this-directory")` uses the keyphrase "m2md-this-directory" to
+% iterate over the MATLAB `.m` code files in the current directory (except for
+% `Contents.m`, if it exists). It can be combined with Name-Value pairs, and in
+% particular with `recursiveSearch`.
 %
 % `m2md(file, Name, Value)` converts the specified MATLAB file with options
 % specified by one or more `name,value` pair arguments. For example, you can
@@ -39,7 +45,8 @@ function [mdFile, texFile] = m2md(file, varargin)
 %
 %% Examples
 %   m2md("m2md");
-%   m2md("m2md", 'texDir', 'tmp', 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
+%   m2md("m2md", 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
+%   m2md("m2md-this-directory", 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
 %
 %
 %% Input Arguments
@@ -77,11 +84,15 @@ function [mdFile, texFile] = m2md(file, varargin)
 %  mdFilename - Name of the md file (string | character vector)
 %  Output file name to which the md file is saved. 
 %
-%  deleteTex - Flag to delete tex file (false (deafult) | true)
+%  deleteTex - Flag to delete tex file (false (default) | true)
 %  Whether to delete the intermediary tex file, specified as `true` or `false`.
 %  If the tex file is deleted and its parent folder is empty, the parent folder
 %  will then be deleted too.
-%
+%  
+%  recursiveSearch - Flag to seach subdirectories when using "m2md-this-directory" (false (default) | true)
+%  Whether to additionally search and create .md files for .m files located in
+%  the subdirectories of the present directory.
+%  
 %
 %% Output Arguments
 %  mdFile - Relative path to .md file (string | character vector)
@@ -92,7 +103,7 @@ function [mdFile, texFile] = m2md(file, varargin)
 %
 %
 %% Tips
-% - In order to demarcate the end of the docstring: create a section entitled
+% * In order to demarcate the end of the docstring: create a section entitled
 % ENDPUBLISH (use `%% ENDPUBLISH`) i.e. `%%`, followed by a space, followed by
 % `ENDPUBLISH`.
 % 
@@ -106,11 +117,17 @@ function [mdFile, texFile] = m2md(file, varargin)
 % Mehul Gajwani, Monash University, 2023
 %
 %
-
+%% TODO
+% * Add option to use m2md-this-directory to target another directory (i.e.
+% other than the current directory)
+% * Consider adding option to remove ToC
+% * Review where outputs are produced (relative vs absolute locations)
+% * Some potential issues when passing in full hyperlinks - can currently be
+% worked around by putting them in code blocks using backticks
+%
+%
 %% ENDPUBLISH
 
-%% TODO
-% - Consider adding option to remove ToC
 
 
 %% Prelims
@@ -123,6 +140,7 @@ ip.addOptional('texDir', '.');
 ip.addOptional('mdDir', 'html');
 ip.addOptional('mdFilename', file);
 ip.addOptional('deleteTex', false);
+ip.addOptional('recursiveSearch', false);
 
 
 ip.parse(file, varargin{:});
@@ -133,6 +151,22 @@ outputDir = ip.Results.outputDir;
 texDir = ip.Results.texDir;
 mdDir = ip.Results.mdDir;
 mdFilename = ip.Results.mdFilename;
+
+
+%% Flag to iterate over whole directory (except Contents.m)
+if strcmp(file, "m2md-this-directory")
+    if ip.Results.recursiveSearch; d = dir(fullfile(pwd, "**\*.m")); 
+    else; d = dir(fullfile(pwd, "*.m"));  end
+
+    for ii = 1:length(d)
+        if ~strcmp(d(ii).name, "Contents.m")
+            m2md( extractBetween(convertCharsToStrings(d(ii).name), 1, strlength(d(ii).name)-2) , ...
+                varargin{:} );
+        end
+    end
+    
+    return;
+end
 
 
 %% Allow users to change tex output dir, md output dir, or both
@@ -163,6 +197,8 @@ texFile = publish(file, texOptions{:} );
 [texPath, texName] = fileparts(texFile);
 mdFile = latex2markdown_mFile(append(texPath, filesep, texName), mdOptions{:});
 
+
+%% deleteTex
 if ip.Results.deleteTex
     delete(texFile);
     if length(dir(texPath)) == 2 % folder only contains . and ..
@@ -171,4 +207,4 @@ if ip.Results.deleteTex
 end
 
 
-end
+end % end main

@@ -22,9 +22,11 @@ function [str, idxLiteral] = processLiteralOutput_mFile(str)
 % Note: Other outputs (matlabsymbolicoutout, matlabtableoutput)
 % will be processed in processDocumentOutput.m
 
-% % % % % % % % % % added to fix appearance of underscores % % % % % % % % % % 
+% % % % % % % % added to fix appearance of certain characters % % % % % % % % %
 str = replace(str,"\_","_");
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+str = replace(str,"\{","{");
+str = replace(str,"\}","}");
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
 
 
