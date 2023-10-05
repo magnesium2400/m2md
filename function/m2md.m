@@ -10,7 +10,9 @@ function [mdFile, texFile] = m2md(file, varargin)
 % distributed as-is, but is accepting improvements (at least in 2023).
 %% Syntax
 %   m2md(file);
+%   m2md;
 %   m2md("m2md-this-directory");
+%   m2md([]);
 %   m2md(file, Name, Value);
 %   mdFile = m2md(file,___);
 %   [mdFile,texFile] = m2md(file,___);
@@ -21,12 +23,25 @@ function [mdFile, texFile] = m2md(file, varargin)
 % to a tex file and then into a Markdown file, using the functionality provided
 % by PUBLISH and LATEX2MARKDOWN. It requires the addition of the keyphrase `%%
 % ENDPUBLISH` after the help/docstring to function.
-%
+% 
+% `m2md` converts all the `.m` files in the current directory (not in its
+% subdirectories) using default specifications, and outputs the `.tex` and `.md`
+% files in `./html`. `Contents.m`, if it exists, is (by default) output in the
+% current directory (but this can be overridden). If more than half of the .m
+% files in the current directory have been converted to .md files and placed in
+% a sub-directory, m2md will try to guess the default settings that have been
+% used. 
+% 
 % `m2md("m2md-this-directory")` uses the keyphrase "m2md-this-directory" to
-% iterate over the MATLAB `.m` code files in the current directory (except for
-% `Contents.m`, if it exists). It can be combined with Name-Value pairs, and in
-% particular with `recursiveSearch`.
-%
+% iterate over the MATLAB `.m` code files in the current directory. It can be
+% combined with Name-Value pairs, and in particular with `recursiveSearch`.
+% `Contents.m`, if it exists, is (by default) output in the current directory
+% (but this can be overridden).
+% 
+% `m2md([])` does the same as the above i.e. iterates over all the `.m` files in
+% the current directory. This can be combined with Name-Value pairs e.g. to
+% change the output destination.
+% 
 % `m2md(file, Name, Value)` converts the specified MATLAB file with options
 % specified by one or more `name,value` pair arguments. For example, you can
 % specify custom options for generating the .tex and .md files, where to output
@@ -46,7 +61,7 @@ function [mdFile, texFile] = m2md(file, varargin)
 %% Examples
 %   m2md("m2md");
 %   m2md("m2md", 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
-%   m2md("m2md-this-directory", 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
+%   m2md([], 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
 %
 %
 %% Input Arguments
@@ -93,6 +108,14 @@ function [mdFile, texFile] = m2md(file, varargin)
 %  Whether to additionally search and create .md files for .m files located in
 %  the subdirectories of the present directory.
 %  
+%  contentsName - Filename to be used for Contents.m ('Contents' (default) | string | character vector)
+%  Filename used for Contents.m if using m2md("m2md-this-directory", ___) or
+%  m2md([], ___).
+%  
+%  contentsDir - Directory to be used for Contents.m ('.' (default) | string | character vector)
+%  Directory used for Contents.m if using m2md("m2md-this-directory", ___) or
+%  m2md([], ___).
+%
 %
 %% Output Arguments
 %  mdFile - Relative path to .md file (string | character vector)
@@ -132,41 +155,99 @@ function [mdFile, texFile] = m2md(file, varargin)
 
 %% Prelims
 ip = inputParser;
-ip.addRequired('file');
-ip.addOptional('texOptions', {"evalCode", false, "showCode", false, "format", "latex"});
-ip.addOptional('mdOptions', {});
-ip.addOptional('outputDir', '.');
-ip.addOptional('texDir', '.');
-ip.addOptional('mdDir', 'html');
-ip.addOptional('mdFilename', file);
-ip.addOptional('deleteTex', false);
-ip.addOptional('recursiveSearch', false);
+ip.addOptional('file', [], @(x) isstring(x) || ischar(x) || isempty(x) );
+ip.addParameter('texOptions', {"evalCode", false, "showCode", false, "format", "latex"});
+ip.addParameter('mdOptions', {});
+ip.addParameter('outputDir', '.');
+ip.addParameter('texDir', '.');
+ip.addParameter('mdDir', 'html');
+ip.addParameter('mdFilename', []); % this will be overwritten later
+ip.addParameter('deleteTex', false);
+ip.addParameter('recursiveSearch', false);
+ip.addParameter('guessDefaults', true);
 
+ip.addParameter('doContents', true);
+ip.addParameter('contentsName', 'Contents');
+ip.addParameter('contentsDir', '.');
 
-ip.parse(file, varargin{:});
+if nargin > 0; ip.parse(file, varargin{:}); else; ip.parse([]); end
 file = ip.Results.file;
 texOptions = ip.Results.texOptions;
 mdOptions = ip.Results.mdOptions;
 outputDir = ip.Results.outputDir;
 texDir = ip.Results.texDir;
 mdDir = ip.Results.mdDir;
-mdFilename = ip.Results.mdFilename;
+if any(strcmp(ip.UsingDefaults, 'mdFilename')); mdFilename = file;
+else; mdFilename = ip.Results.mdFilename; end
+deleteTex = ip.Results.deleteTex;
 
+contentsName = ip.Results.contentsName;
+contentsDir = ip.Results.contentsDir;
 
 %% Flag to iterate over whole directory (except Contents.m)
-if strcmp(file, "m2md-this-directory")
+if strcmp(file, "m2md-this-directory") || isempty(file)
     if ip.Results.recursiveSearch; d = dir(fullfile(pwd, "**\*.m")); 
     else; d = dir(fullfile(pwd, "*.m"));  end
+    fprintf('Identified %i files\n', length(d));
 
+    %% Consider using Guess defaults (if no argument provided)
+    if ip.Results.guessDefaults
+
+        % find directory that already contains files
+        % a. get folders (NOTE: NOT recursive)
+        f = dir;
+        f = f(~ismember({f.name},{'..'}));
+        f = f([f.isdir]==1);
+
+        % b. get m filenames
+        c = dir("*.m");
+        c = {c(:).name};
+        c = cellfun(@(x) extractBetween(x,1,strlength(x)-2),c);
+
+        % c. find folders with md files; set folder if it contains more than half
+        % the docs
+        for ii = 1:length(f)
+            current = dir(strcat(f(ii).name, filesep, "*.md"));
+            current = {current(:).name};
+            if sum(contains(current, c)) > length(c)/2
+                mdDir = f(ii).name;
+                break;
+            end
+        end
+        fprintf('Outputting files to %s\n', fullfile(mdDir));
+
+        % d. similarly, find folders with tex files and set deleteTex
+        deleteTex = true;
+        for ii = 1:length(f)
+            current = dir(strcat(f(ii).name, filesep, "*.tex"));
+            current = {current(:).name};
+            if sum(contains(current, c)) > length(c)/2
+                texDir = f(ii).name;
+                deleteTex = false;
+                fprintf('Outputting .tex files to %s\n', fullfile(texDir));
+                break;
+            end
+        end
+        if deleteTex; fprintf('Deleting .tex files\n'); end
+
+    end % end guessDefaults
+
+    %% Process each file in current directory
     for ii = 1:length(d)
         if ~strcmp(d(ii).name, "Contents.m")
             m2md( extractBetween(convertCharsToStrings(d(ii).name), 1, strlength(d(ii).name)-2) , ...
-                varargin{:} );
+                varargin{:} , 'mdDir', mdDir, 'texDir', texDir, 'deleteTex', deleteTex);
+        else % if this is the contents file 
+            if ip.Results.doContents
+                 % mdDir and mdFilename may be called twice here
+                m2md("Contents", varargin{:}, "mdDir", contentsDir, "mdFilename", contentsName, 'texDir', texDir, 'deleteTex', deleteTex);
+                fprintf('Outputting Contents.m to %s\n', contentsDir);
+            end
         end
     end
     
     return;
-end
+end % end m2md-this-directory
 
 
 %% Allow users to change tex output dir, md output dir, or both
@@ -186,7 +267,8 @@ if ( ~usingDefault('texDir') || ~usingDefault('outputDir') )...
 end
 
 % allow user to change md dir and name if desired
-if ~usingDefault(mdFilename) && usingDefault('mdOptions')
+if (~usingDefault('mdFilename') || ~usingDefault('mdDir')) ...
+        && usingDefault('mdOptions')
     mdOptions{end+1} = "outputfilename";
     mdOptions{end+1} = append(mdDir,filesep,mdFilename);
 end
@@ -199,7 +281,7 @@ mdFile = latex2markdown_mFile(append(texPath, filesep, texName), mdOptions{:});
 
 
 %% deleteTex
-if ip.Results.deleteTex
+if deleteTex
     delete(texFile);
     if length(dir(texPath)) == 2 % folder only contains . and ..
         rmdir(texPath);
@@ -208,3 +290,56 @@ end
 
 
 end % end main
+
+
+
+
+
+
+
+
+
+
+
+%% Consider using Guess defaults (if no argument provided)
+% % % % % if ip.Results.guessDefaults
+% % % % % 
+% % % % %     % 1. find directory that already contains files
+% % % % %     % a. get folders (NOTE: NOT recursive)
+% % % % %     f = dir
+% % % % %     f = f(~ismember({f.name},{'..'})); 
+% % % % %     f = f([f.isdir]==1);
+% % % % % 
+% % % % %     % b. get m filenames
+% % % % %     c = dir("*.m"); 
+% % % % %     c = {c(:).name}; 
+% % % % %     c = cellfun(@(x) extractBetween(x,1,strlength(x)-2),c);
+% % % % % 
+% % % % %     % c. find folders with md files; set folder if it contains more than half
+% % % % %     % the docs
+% % % % %     for ii = 1:length(f)
+% % % % %         current = dir(strcat(f(ii).name, filesep, "*.md"));
+% % % % %         current = {current(:).name}
+% % % % %         if sum(contains(current, c)) > length(c)/2
+% % % % %             mdDir = f(ii).name
+% % % % %             mdOptions{end+1} = "mdDir";
+% % % % %             mdOptions{end+1} = mdDir;
+% % % % %             break;
+% % % % %         end
+% % % % %     end
+% % % % % 
+% % % % %     % d. similarly, find folders with tex files and set deleteTex
+% % % % %     deleteTex = true; 
+% % % % %     for ii = 1:length(f)
+% % % % %         current = dir(strcat(f(ii).name, filesep, "*.tex"));
+% % % % %         current = {current(:).name};
+% % % % %         if sum(contains(current, c)) > length(c)/2  
+% % % % %             texDir = f(ii).name; 
+% % % % %             deleteTex = false; 
+% % % % %             texOptions{end+1} = "outputDir"; %#ok<*AGROW> 
+% % % % %             texOptions{end+1} = texDir;
+% % % % %             break;
+% % % % %         end
+% % % % %     end
+% % % % % 
+% % % % % end % end guessDefaults

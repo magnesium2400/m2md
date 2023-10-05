@@ -21,7 +21,9 @@ Note: this README was generated using `m2md` and uses syntax dependent on MATLAB
 
 ```matlab:Code(Display)
 m2md(file);
+m2md;
 m2md("m2md-this-directory");
+m2md([]);
 m2md(file, Name, Value);
 mdFile = m2md(file,___);
 [mdFile,texFile] = m2md(file,___);
@@ -32,7 +34,13 @@ mdFile = m2md(file,___);
 `m2md(file)` converts the doctring or help of the specified MATLAB code file to a tex file and then into a Markdown file, using the functionality provided by PUBLISH and LATEX2MARKDOWN. It requires the addition of the keyphrase `%% ENDPUBLISH` after the help/docstring to function.
    
 
+`m2md` converts all the `.m` files (except for `Contents.m`, if it exists) in the current directory (not in its subdirectories) using default specifications, and outputs the `.tex` and `.md` files in `./html`.
+   
+
 `m2md("m2md-this-directory")` uses the keyphrase "m2md-this-directory" to iterate over the MATLAB `.m` code files in the current directory (except for `Contents.m`, if it exists). It can be combined with Name-Value pairs, and in particular with `recursiveSearch`.
+   
+
+`m2md([])` does the same as the above i.e. iterates over all the `.m` files in the current directory. This can be combined with Name-Value pairs e.g. to change the output destination.
    
 
 `m2md(file, Name, Value)` converts the specified MATLAB file with options specified by one or more `name,value` pair arguments. For example, you can specify custom options for generating the .tex and .md files, where to output the .tex or .md files, the name of the .md file, or whether to delete the .tex file.
@@ -47,8 +55,8 @@ mdFile = m2md(file,___);
 
 ```matlab:Code(Display)
 m2md("m2md");
-m2md("m2md", 'texDir', 'tmp', 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
-m2md("m2md-this-directory", 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
+m2md("m2md", 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
+m2md([], 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
 ```
 
 # Input Arguments

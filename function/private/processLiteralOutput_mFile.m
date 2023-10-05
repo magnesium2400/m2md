@@ -26,6 +26,7 @@ function [str, idxLiteral] = processLiteralOutput_mFile(str)
 str = replace(str,"\_","_");
 str = replace(str,"\{","{");
 str = replace(str,"\}","}");
+str = replace(str,"\^{}","^");
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
 
