@@ -1,1 +1,9 @@
 remote_theme: just-the-docs/just-the-docs
+
+aux_links:
+  "magnesium2400 homepage":
+    - "https://magnesium2400.github.io/"
+    
+nav_external_links:
+  - title: m2md on GitHub
+    url: https://magnesium2400.github.io/m2md/
