@@ -1,3 +1,8 @@
+---
+layout: default
+title: m2md
+---
+
 
 # m2md Convert MATLAB .m docstring/help to Markdown
     
@@ -21,7 +26,7 @@ Note: this README was generated using `m2md` and uses syntax dependent on MATLAB
    
 # Syntax
 
-```matlab:Code(Display)
+```matlab
 m2md(file)
 m2md
 m2md("m2md-this-directory")
@@ -55,7 +60,7 @@ mdFile = m2md(file,___)
    
 # Examples
 
-```matlab:Code(Display)
+```matlab
 m2md("m2md");
 m2md("m2md", 'mdDir', '.', 'mdFilename', 'README', 'deleteTex', true);
 m2md([], 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
@@ -63,7 +68,7 @@ m2md([], 'mdDir', 'DOCS', 'deleteTex', true, 'recursiveSearch', false);
 
 # Input Arguments
 
-```matlab:Code(Display)
+```matlab
 file - MATLAB file name (character vector | string)
 MATLAB file name, specified as a character vector or string. It should *NOT*
 include the '.m' extension. *NOTE*: When publishing a file, this will
@@ -115,7 +120,7 @@ overwrite existing files in the target folders with the same name as `file`.
 
 # See Also
 
-```matlab:Code(Display)
+```matlab
 PUBLISH, HELP, LOOKFOR
 latex2markdown / livescript2markdown
 ```
